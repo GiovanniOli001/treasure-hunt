@@ -1,0 +1,13 @@
+# Treasure Hunt - Cloudflare Workers Configuration
+
+name = "treasure-hunt-api"
+main = "src/index.ts"
+compatibility_date = "2024-01-01"
+
+# D1 Database binding - update database_id after creating DB
+[[d1_databases]]
+binding = "DB"
+database_name = "treasure-hunt-db"
+database_id = "REPLACE_WITH_DB_ID"
+
+# Set JWT_SECRET via: npx wrangler secret put JWT_SECRET

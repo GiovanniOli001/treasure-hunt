@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Login - Treasure Hunt</title>
+  <link rel="stylesheet" href="css/main.css">
+  <style>
+    .login-wrapper {
+      max-width: 400px;
+      margin: 0 auto;
+      min-height: 100dvh;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      padding: 20px;
+    }
+    .login-card {
+      background: var(--white);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-lg);
+      padding: 32px 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+    }
+    .login-header {
+      text-align: center;
+    }
+    .login-header h1 {
+      font-size: 22px;
+      font-weight: 700;
+      color: var(--dark);
+    }
+    .login-header p {
+      font-size: 14px;
+      color: var(--gray-500);
+      margin-top: 4px;
+    }
+    .login-form {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    /* Setup form */
+    #setupSection { display: none; }
+    #setupSection.visible { display: block; }
+    #loginSection { display: none; }
+    #loginSection.visible { display: block; }
+    .setup-note {
+      background: var(--primary-light);
+      border: 1px solid rgba(24, 99, 220, 0.2);
+      border-radius: var(--radius);
+      padding: 12px;
+      font-size: 13px;
+      color: var(--primary-dark);
+    }
+  </style>
+</head>
+<body>
+  <div class="login-wrapper">
+    <div class="login-card">
+      <div class="login-header">
+        <h1>Treasure Hunt</h1>
+        <p>Admin Dashboard</p>
+      </div>
+
+      <!-- Login -->
+      <div id="loginSection" class="login-form">
+        <div class="form-group">
+          <label for="email">Email</label>
+          <input type="email" id="email" placeholder="admin@example.com" autocomplete="email">
+        </div>
+        <div class="form-group">
+          <label for="password">Password</label>
+          <input type="password" id="password" placeholder="Password" autocomplete="current-password">
+        </div>
+        <button id="loginBtn" class="btn btn-primary btn-block btn-lg">Sign In</button>
+      </div>
+
+      <!-- First-time setup -->
+      <div id="setupSection">
+        <div class="setup-note">
+          No admin account found. Create your first admin account to get started.
+        </div>
+        <div class="login-form" style="margin-top: 16px;">
+          <div class="form-group">
+            <label for="setupName">Name</label>
+            <input type="text" id="setupName" placeholder="Your name">
+          </div>
+          <div class="form-group">
+            <label for="setupEmail">Email</label>
+            <input type="email" id="setupEmail" placeholder="admin@example.com">
+          </div>
+          <div class="form-group">
+            <label for="setupPassword">Password</label>
+            <input type="password" id="setupPassword" placeholder="Choose a password">
+          </div>
+          <button id="setupBtn" class="btn btn-primary btn-block btn-lg">Create Account</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast" class="toast"></div>
+
+  <script src="js/api.js"></script>
+  <script>
+    // Check if already logged in
+    if (getToken()) {
+      window.location.href = '/admin.html';
+    }
+
+    // Check if setup needed
+    (async () => {
+      try {
+        // Try to verify - if no users exist, the setup endpoint will accept
+        document.getElementById('loginSection').classList.add('visible');
+      } catch {
+        document.getElementById('loginSection').classList.add('visible');
+      }
+    })();
+
+    // Login
+    document.getElementById('loginBtn').addEventListener('click', async () => {
+      const email = document.getElementById('email').value.trim();
+      const password = document.getElementById('password').value;
+
+      if (!email || !password) {
+        showToast('Please enter email and password', true);
+        return;
+      }
+
+      const btn = document.getElementById('loginBtn');
+      btn.disabled = true;
+      btn.textContent = 'Signing in...';
+
+      try {
+        const res = await apiRequest('/api/auth/login', {
+          method: 'POST',
+          body: JSON.stringify({ email, password })
+        });
+
+        if (!res.ok) {
+          // If login fails and it might be first time, show setup
+          if (res.error && res.error.includes('Invalid')) {
+            showToast(res.error, true);
+          } else {
+            showToast(res.error || 'Login failed', true);
+          }
+          btn.disabled = false;
+          btn.textContent = 'Sign In';
+          return;
+        }
+
+        setToken(res.token);
+        window.location.href = '/admin.html';
+      } catch (err) {
+        showToast('Connection error. Is the API running?', true);
+        btn.disabled = false;
+        btn.textContent = 'Sign In';
+      }
+    });
+
+    // Show setup form
+    document.getElementById('loginSection').querySelector('button').insertAdjacentHTML(
+      'afterend',
+      '<p style="text-align:center;margin-top:12px;font-size:13px;color:var(--gray-500)">' +
+      'First time? <a href="#" id="showSetup" style="color:var(--primary)">Create admin account</a></p>'
+    );
+
+    document.addEventListener('click', (e) => {
+      if (e.target.id === 'showSetup') {
+        e.preventDefault();
+        document.getElementById('loginSection').classList.remove('visible');
+        document.getElementById('setupSection').classList.add('visible');
+      }
+    });
+
+    // Setup
+    document.getElementById('setupBtn').addEventListener('click', async () => {
+      const name = document.getElementById('setupName').value.trim();
+      const email = document.getElementById('setupEmail').value.trim();
+      const password = document.getElementById('setupPassword').value;
+
+      if (!name || !email || !password) {
+        showToast('All fields are required', true);
+        return;
+      }
+
+      const btn = document.getElementById('setupBtn');
+      btn.disabled = true;
+      btn.textContent = 'Creating...';
+
+      try {
+        const res = await apiRequest('/api/auth/setup', {
+          method: 'POST',
+          body: JSON.stringify({ name, email, password })
+        });
+
+        if (!res.ok) {
+          showToast(res.error || 'Setup failed', true);
+          btn.disabled = false;
+          btn.textContent = 'Create Account';
+          return;
+        }
+
+        setToken(res.token);
+        window.location.href = '/admin.html';
+      } catch (err) {
+        showToast('Connection error', true);
+        btn.disabled = false;
+        btn.textContent = 'Create Account';
+      }
+    });
+
+    // Enter key support
+    document.querySelectorAll('input').forEach(input => {
+      input.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          const section = input.closest('#loginSection, #setupSection');
+          if (section) section.querySelector('button').click();
+        }
+      });
+    });
+
+    function showToast(message, isError = false) {
+      const toast = document.getElementById('toast');
+      toast.textContent = message;
+      toast.className = 'toast' + (isError ? ' error' : '');
+      requestAnimationFrame(() => {
+        toast.classList.add('visible');
+        setTimeout(() => toast.classList.remove('visible'), 3000);
+      });
+    }
+  </script>
+</body>
+</html>

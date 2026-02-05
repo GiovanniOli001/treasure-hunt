@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Treasure Hunt</title>
+  <link rel="stylesheet" href="css/main.css">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <style>
+    body { background: var(--navy); }
+
+    .page-wrapper {
+      background: linear-gradient(180deg, var(--navy) 0%, #0f2847 100%);
+      color: var(--white);
+    }
+
+    .page-header {
+      background: transparent;
+      padding: 20px 20px 8px;
+      justify-content: center;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+    }
+
+    .page-header img {
+      height: 44px;
+      margin-bottom: 4px;
+    }
+
+    .page-header h1 {
+      font-size: 26px;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      background: linear-gradient(135deg, #3aa9e0 0%, #f57e20 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .page-header .subtitle {
+      font-size: 14px;
+      opacity: 0.6;
+    }
+
+    .game-title {
+      text-align: center;
+      padding: 0;
+    }
+
+    .game-title h2 {
+      font-size: 18px;
+      font-weight: 600;
+      color: var(--white);
+    }
+
+    .game-title p {
+      font-size: 13px;
+      color: rgba(255,255,255,0.5);
+      margin-top: 2px;
+    }
+
+    /* Map - make it the hero */
+    .map-section {
+      margin: 0 -20px;
+      position: relative;
+    }
+
+    .map-container {
+      border-radius: 0;
+      border: none;
+      height: 340px;
+      border-top: 1px solid rgba(255,255,255,0.1);
+      border-bottom: 1px solid rgba(255,255,255,0.1);
+    }
+
+    .map-hint {
+      background: rgba(245, 126, 32, 0.95);
+      font-weight: 600;
+      animation: hintBounce 2s ease-in-out infinite;
+    }
+
+    @keyframes hintBounce {
+      0%, 100% { transform: translateX(-50%) translateY(0); }
+      50% { transform: translateX(-50%) translateY(-6px); }
+    }
+
+    .map-hint.hidden {
+      animation: none;
+      opacity: 0;
+    }
+
+    .pin-placed-msg {
+      text-align: center;
+      font-size: 13px;
+      color: var(--green);
+      font-weight: 600;
+      padding: 8px 0 0;
+      display: none;
+    }
+
+    .pin-placed-msg.visible {
+      display: block;
+      animation: fadeIn 0.3s ease;
+    }
+
+    /* Form styling on dark bg */
+    .form-section h2 {
+      color: var(--white);
+      font-size: 15px;
+    }
+
+    .form-group label {
+      color: rgba(255,255,255,0.7);
+    }
+
+    .form-group input,
+    .form-group select {
+      background: rgba(255,255,255,0.08);
+      border-color: rgba(255,255,255,0.15);
+      color: var(--white);
+    }
+
+    .form-group input:focus,
+    .form-group select:focus {
+      border-color: #3aa9e0;
+      box-shadow: 0 0 0 3px rgba(58, 169, 224, 0.2);
+      background: rgba(255,255,255,0.12);
+    }
+
+    .form-group input::placeholder {
+      color: rgba(255,255,255,0.3);
+    }
+
+    /* Fun submit button */
+    .btn-submit {
+      background: linear-gradient(135deg, #f57e20 0%, #e06b10 100%);
+      color: var(--white);
+      border: none;
+      font-size: 17px;
+      font-weight: 700;
+      padding: 16px 28px;
+      border-radius: 12px;
+      letter-spacing: 0.02em;
+      transition: all 0.2s;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .btn-submit:hover:not(:disabled) {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(245, 126, 32, 0.4);
+    }
+
+    .btn-submit:active:not(:disabled) {
+      transform: translateY(0);
+    }
+
+    .btn-submit:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+
+    /* Success screen - celebration! */
+    .success-screen {
+      color: var(--white);
+    }
+
+    .success-screen h2 {
+      font-size: 28px;
+      font-weight: 800;
+      background: linear-gradient(135deg, #3aa9e0 0%, #f57e20 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .success-screen p {
+      color: rgba(255,255,255,0.6);
+      font-size: 16px;
+      max-width: 320px;
+    }
+
+    .success-icon {
+      background: rgba(22, 163, 74, 0.2);
+      width: 90px;
+      height: 90px;
+      animation: successPop 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+
+    @keyframes successPop {
+      0% { transform: scale(0); }
+      100% { transform: scale(1); }
+    }
+
+    .confetti-container {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 9999;
+      overflow: hidden;
+    }
+
+    .confetti {
+      position: absolute;
+      width: 10px;
+      height: 10px;
+      top: -10px;
+      animation: confettiFall linear forwards;
+    }
+
+    @keyframes confettiFall {
+      0% { transform: translateY(0) rotate(0deg); opacity: 1; }
+      100% { transform: translateY(100vh) rotate(720deg); opacity: 0; }
+    }
+
+    /* Footer on dark */
+    .page-footer {
+      border-top-color: rgba(255,255,255,0.1);
+      color: rgba(255,255,255,0.3);
+    }
+
+    /* Error on dark */
+    .error-screen h2 { color: var(--white); }
+    .error-screen p { color: rgba(255,255,255,0.5); }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    #entryForm { display: none; }
+    #entryForm.visible {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      animation: fadeIn 0.4s ease;
+    }
+
+    @media (min-width: 601px) {
+      .page-wrapper {
+        background: linear-gradient(180deg, var(--navy) 0%, #0f2847 100%);
+      }
+      .map-section { margin: 0 -20px; }
+      .map-container {
+        border-radius: 12px;
+        margin: 0 20px;
+        border: 1px solid rgba(255,255,255,0.1);
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="page-wrapper">
+    <!-- Header -->
+    <div class="page-header">
+      <img src="assets/logo.svg" alt="Transportme" onerror="this.style.display='none'">
+      <h1>TREASURE HUNT</h1>
+      <div class="subtitle">Drop your pin. Win the prize!</div>
+    </div>
+
+    <!-- Loading -->
+    <div id="loadingScreen" class="loading-screen">
+      <div class="spinner"></div>
+    </div>
+
+    <!-- Error -->
+    <div id="errorScreen" class="error-screen">
+      <h2>Game Not Found</h2>
+      <p id="errorMessage">This game doesn't exist or is no longer active.</p>
+    </div>
+
+    <!-- Entry Form -->
+    <div id="entryForm" class="page-content">
+      <div class="game-title">
+        <h2 id="gameName"></h2>
+        <p>Where do you think the treasure is hidden?</p>
+      </div>
+
+      <!-- Map -->
+      <div class="map-section">
+        <div class="map-container">
+          <div id="map" style="width:100%;height:100%;"></div>
+          <div id="mapHint" class="map-hint">Tap the map to drop your pin</div>
+        </div>
+        <div id="pinPlacedMsg" class="pin-placed-msg">Pin placed! Drag it to adjust position.</div>
+      </div>
+
+      <!-- Dynamic form fields -->
+      <div class="form-section" id="formFields">
+        <h2>Your Details</h2>
+      </div>
+
+      <!-- Submit -->
+      <button type="button" id="submitBtn" class="btn btn-submit btn-block" disabled>
+        Lock In My Guess
+      </button>
+    </div>
+
+    <!-- Success -->
+    <div id="successScreen" class="success-screen">
+      <div class="success-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="20 6 9 17 4 12"></polyline>
+        </svg>
+      </div>
+      <h2>You're In!</h2>
+      <p>Your pin has been locked in. Good luck - the closest pin to the treasure wins!</p>
+    </div>
+
+    <!-- Footer -->
+    <div class="page-footer">
+      Powered by Transportme
+    </div>
+  </div>
+
+  <!-- Confetti container -->
+  <div id="confetti" class="confetti-container"></div>
+
+  <!-- Toast -->
+  <div id="toast" class="toast"></div>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="js/api.js"></script>
+  <script src="js/play.js"></script>
+</body>
+</html>

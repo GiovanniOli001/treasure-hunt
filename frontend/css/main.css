@@ -1,0 +1,444 @@
+/* ============================================
+   TREASURE HUNT - Main Styles
+   Transportme Branding
+   ============================================ */
+
+:root {
+  --primary: #1863DC;
+  --primary-dark: #1453b8;
+  --primary-light: #e8f0fd;
+  --navy: #0a1628;
+  --dark: #212121;
+  --gray-700: #32373C;
+  --gray-500: #6b7280;
+  --gray-300: #d1d5db;
+  --gray-100: #f4f4f4;
+  --white: #ffffff;
+  --green: #16a34a;
+  --red: #dc2626;
+  --orange: #ea580c;
+  --radius: 8px;
+  --radius-lg: 12px;
+  --shadow: 0 1px 3px rgba(0,0,0,0.1);
+  --shadow-md: 0 4px 12px rgba(0,0,0,0.1);
+  --shadow-lg: 0 8px 24px rgba(0,0,0,0.12);
+}
+
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+  font-size: 16px;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  color: var(--dark);
+  background: var(--gray-100);
+  line-height: 1.5;
+  min-height: 100dvh;
+}
+
+/* ============================================
+   LAYOUT
+   ============================================ */
+
+.page-wrapper {
+  max-width: 600px;
+  margin: 0 auto;
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  background: var(--white);
+}
+
+.page-header {
+  background: var(--navy);
+  color: var(--white);
+  padding: 16px 20px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.page-header img {
+  height: 36px;
+  width: auto;
+}
+
+.page-header h1 {
+  font-size: 18px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.page-header .subtitle {
+  font-size: 13px;
+  opacity: 0.7;
+  font-weight: 400;
+}
+
+.page-content {
+  flex: 1;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.page-footer {
+  padding: 16px 20px;
+  text-align: center;
+  font-size: 12px;
+  color: var(--gray-500);
+  border-top: 1px solid var(--gray-300);
+}
+
+/* ============================================
+   MAP
+   ============================================ */
+
+.map-container {
+  width: 100%;
+  height: 300px;
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  border: 2px solid var(--gray-300);
+  position: relative;
+}
+
+.map-container.expanded {
+  height: 400px;
+}
+
+.map-hint {
+  position: absolute;
+  bottom: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--navy);
+  color: var(--white);
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 500;
+  z-index: 1000;
+  pointer-events: none;
+  white-space: nowrap;
+  opacity: 0.9;
+  transition: opacity 0.3s;
+}
+
+.map-hint.hidden {
+  opacity: 0;
+}
+
+/* ============================================
+   FORMS
+   ============================================ */
+
+.form-section {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.form-section h2 {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--dark);
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.form-group label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--gray-700);
+}
+
+.form-group label .required {
+  color: var(--red);
+  margin-left: 2px;
+}
+
+.form-group input,
+.form-group select,
+.form-group textarea {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1.5px solid var(--gray-300);
+  border-radius: var(--radius);
+  font-size: 16px; /* prevents iOS zoom */
+  font-family: inherit;
+  color: var(--dark);
+  background: var(--white);
+  transition: border-color 0.15s;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(24, 99, 220, 0.12);
+}
+
+.form-group input::placeholder {
+  color: var(--gray-500);
+}
+
+/* ============================================
+   BUTTONS
+   ============================================ */
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px 24px;
+  border: none;
+  border-radius: var(--radius);
+  font-size: 15px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.15s;
+  text-decoration: none;
+}
+
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn-primary {
+  background: var(--primary);
+  color: var(--white);
+}
+
+.btn-primary:hover:not(:disabled) {
+  background: var(--primary-dark);
+}
+
+.btn-primary:active:not(:disabled) {
+  transform: scale(0.98);
+}
+
+.btn-secondary {
+  background: var(--gray-100);
+  color: var(--dark);
+  border: 1.5px solid var(--gray-300);
+}
+
+.btn-secondary:hover:not(:disabled) {
+  background: var(--gray-300);
+}
+
+.btn-danger {
+  background: var(--red);
+  color: var(--white);
+}
+
+.btn-danger:hover:not(:disabled) {
+  background: #b91c1c;
+}
+
+.btn-success {
+  background: var(--green);
+  color: var(--white);
+}
+
+.btn-success:hover:not(:disabled) {
+  background: #15803d;
+}
+
+.btn-block {
+  width: 100%;
+}
+
+.btn-lg {
+  padding: 14px 28px;
+  font-size: 16px;
+}
+
+.btn-sm {
+  padding: 8px 16px;
+  font-size: 13px;
+}
+
+/* ============================================
+   SUCCESS STATE
+   ============================================ */
+
+.success-screen {
+  display: none;
+  text-align: center;
+  padding: 40px 20px;
+  flex: 1;
+  justify-content: center;
+  align-items: center;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.success-screen.visible {
+  display: flex;
+}
+
+.success-icon {
+  width: 80px;
+  height: 80px;
+  background: #dcfce7;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto;
+}
+
+.success-icon svg {
+  width: 40px;
+  height: 40px;
+  color: var(--green);
+}
+
+.success-screen h2 {
+  font-size: 22px;
+  font-weight: 700;
+}
+
+.success-screen p {
+  color: var(--gray-500);
+  font-size: 15px;
+  max-width: 300px;
+}
+
+/* ============================================
+   STATUS BADGES
+   ============================================ */
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.badge-draft { background: #fef3c7; color: #92400e; }
+.badge-active { background: #dcfce7; color: #166534; }
+.badge-ended { background: #e5e7eb; color: #374151; }
+
+/* ============================================
+   TOAST
+   ============================================ */
+
+.toast {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%) translateY(100px);
+  background: var(--navy);
+  color: var(--white);
+  padding: 12px 24px;
+  border-radius: var(--radius);
+  font-size: 14px;
+  font-weight: 500;
+  z-index: 10000;
+  transition: transform 0.3s ease;
+  max-width: 90vw;
+  text-align: center;
+}
+
+.toast.error {
+  background: var(--red);
+}
+
+.toast.visible {
+  transform: translateX(-50%) translateY(0);
+}
+
+/* ============================================
+   LOADING
+   ============================================ */
+
+.loading-screen {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  padding: 40px;
+}
+
+.spinner {
+  width: 32px;
+  height: 32px;
+  border: 3px solid var(--gray-300);
+  border-top-color: var(--primary);
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ============================================
+   ERROR STATE
+   ============================================ */
+
+.error-screen {
+  display: none;
+  text-align: center;
+  padding: 40px 20px;
+  flex: 1;
+  justify-content: center;
+  align-items: center;
+  flex-direction: column;
+  gap: 12px;
+  color: var(--gray-500);
+}
+
+.error-screen.visible {
+  display: flex;
+}
+
+.error-screen h2 {
+  font-size: 18px;
+  color: var(--dark);
+}
+
+/* ============================================
+   RESPONSIVE
+   ============================================ */
+
+@media (min-width: 601px) {
+  body {
+    background: var(--gray-100);
+  }
+  .page-wrapper {
+    margin-top: 20px;
+    margin-bottom: 20px;
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-lg);
+    min-height: calc(100dvh - 40px);
+  }
+  .page-header {
+    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+  }
+}
