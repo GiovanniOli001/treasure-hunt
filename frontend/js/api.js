@@ -42,9 +42,16 @@ async function apiRequest(path, options = {}) {
   // Handle CSV responses
   const contentType = response.headers.get('Content-Type') || '';
   if (contentType.includes('text/csv')) {
-    return { ok: response.ok, blob: await response.blob(), status: response.status };
+    return { ok: response.ok, blob: await response.blob(), httpStatus: response.status };
   }
 
   const data = await response.json();
-  return { ok: response.ok, ...data, status: response.status };
+
+  // If API returns an array, return it directly with ok flag
+  if (Array.isArray(data)) {
+    data.ok = response.ok;
+    return data;
+  }
+
+  return { ok: response.ok, httpStatus: response.status, ...data };
 }
