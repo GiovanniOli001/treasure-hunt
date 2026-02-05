@@ -8,6 +8,6 @@ compatibility_date = "2024-01-01"
 [[d1_databases]]
 binding = "DB"
 database_name = "treasure-hunt-db"
-database_id = "REPLACE_WITH_DB_ID"
+database_id = "d4a1d6cd-5c41-45ca-896c-f8edb1ab5547"
 
 # Set JWT_SECRET via: npx wrangler secret put JWT_SECRET
