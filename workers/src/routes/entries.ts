@@ -58,6 +58,77 @@ export async function handleEntries(
     return json({ id, message: 'Entry submitted!' }, 201);
   }
 
+  // GET /api/games/:code/entries/results - Public results after reveal
+  const resultsMatch = path.match(/^\/api\/games\/([a-z0-9-]+)\/entries\/results$/i);
+  if (resultsMatch && method === 'GET') {
+    const code = resultsMatch[1];
+
+    const game = await env.DB.prepare(`
+      SELECT id, status, treasure_lat, treasure_lng, winner_entry_id, revealed_at
+      FROM games WHERE code = ? OR id = ?
+    `).bind(code, code).first<{
+      id: string; status: string; treasure_lat: number | null; treasure_lng: number | null;
+      winner_entry_id: string | null; revealed_at: string | null;
+    }>();
+
+    if (!game) return error('Game not found', 404);
+    if (!game.revealed_at) return error('Results not yet available', 404);
+
+    // Get winner entry
+    let winner = null;
+    if (game.winner_entry_id) {
+      const w = await env.DB.prepare(
+        'SELECT id, form_data, distance_m, marker_lat, marker_lng FROM entries WHERE id = ?'
+      ).bind(game.winner_entry_id).first();
+      if (w) {
+        const fd = JSON.parse(w.form_data as string || '{}');
+        winner = {
+          id: w.id,
+          name: fd.name || fd.email || 'Anonymous',
+          distance_m: w.distance_m,
+          marker_lat: w.marker_lat,
+          marker_lng: w.marker_lng
+        };
+      }
+    }
+
+    // Get total entries count
+    const countResult = await env.DB.prepare(
+      'SELECT COUNT(*) as count FROM entries WHERE game_id = ?'
+    ).bind(game.id).first<{ count: number }>();
+
+    // If entry_id provided, get that entry's result
+    const url = new URL(request.url);
+    const entryId = url.searchParams.get('entry_id');
+    let myEntry = null;
+    if (entryId) {
+      const e = await env.DB.prepare(
+        'SELECT id, distance_m, marker_lat, marker_lng FROM entries WHERE id = ? AND game_id = ?'
+      ).bind(entryId, game.id).first();
+      if (e) {
+        // Get rank
+        const rank = await env.DB.prepare(
+          'SELECT COUNT(*) as rank FROM entries WHERE game_id = ? AND distance_m < ?'
+        ).bind(game.id, e.distance_m).first<{ rank: number }>();
+        myEntry = {
+          id: e.id,
+          distance_m: e.distance_m,
+          marker_lat: e.marker_lat,
+          marker_lng: e.marker_lng,
+          rank: (rank?.rank || 0) + 1
+        };
+      }
+    }
+
+    return json({
+      treasure_lat: game.treasure_lat,
+      treasure_lng: game.treasure_lng,
+      winner,
+      total_entries: countResult?.count || 0,
+      my_entry: myEntry
+    });
+  }
+
   // GET /api/games/:id/entries - List entries (admin)
   const listMatch = path.match(/^\/api\/games\/([a-f0-9-]+)\/entries$/i);
   if (listMatch && method === 'GET') {
