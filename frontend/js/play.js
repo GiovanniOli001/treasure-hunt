@@ -95,23 +95,11 @@ function placeMarker(lat, lng) {
   if (marker) {
     marker.setLatLng([lat, lng]);
   } else {
-    // Custom Transportme pin icon
-    const pinIcon = L.divIcon({
-      className: '',
-      html: `<div style="position:relative;width:40px;height:52px">
-        <svg viewBox="0 0 40 52" width="40" height="52">
-          <defs>
-            <filter id="shadow" x="-20%" y="-10%" width="140%" height="130%">
-              <feDropShadow dx="0" dy="2" stdDeviation="2" flood-opacity="0.3"/>
-            </filter>
-          </defs>
-          <path d="M20 50 C20 50 36 30 36 18 A16 16 0 1 0 4 18 C4 30 20 50 20 50Z" fill="#f57e20" filter="url(#shadow)"/>
-          <circle cx="20" cy="18" r="8" fill="#fff"/>
-          <circle cx="20" cy="18" r="4" fill="#f57e20"/>
-        </svg>
-      </div>`,
-      iconSize: [40, 52],
-      iconAnchor: [20, 52]
+    // Transportme branded pin icon
+    const pinIcon = L.icon({
+      iconUrl: 'assets/pin-icon.svg',
+      iconSize: [44, 56],
+      iconAnchor: [22, 56]
     });
 
     marker = L.marker([lat, lng], {
