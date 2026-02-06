@@ -66,7 +66,7 @@ body {
 }
 
 .page-header img {
-  height: 36px;
+  height: 32px;
   width: auto;
 }
 
@@ -156,7 +156,7 @@ body {
 .form-group {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 6px;
 }
 
 .form-group label {

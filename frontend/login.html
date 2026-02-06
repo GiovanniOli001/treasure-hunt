@@ -6,99 +6,151 @@
   <title>Admin Login - Treasure Hunt</title>
   <link rel="stylesheet" href="css/main.css">
   <style>
-    .login-wrapper {
-      max-width: 400px;
-      margin: 0 auto;
+    body {
+      background: var(--navy);
+      margin: 0;
+    }
+
+    .login-page {
       min-height: 100dvh;
       display: flex;
-      flex-direction: column;
+      align-items: center;
       justify-content: center;
-      padding: 20px;
+      padding: 24px;
+      background: linear-gradient(160deg, var(--navy) 0%, #0f2847 50%, #122d52 100%);
     }
+
     .login-card {
       background: var(--white);
-      border-radius: var(--radius-lg);
-      box-shadow: var(--shadow-lg);
-      padding: 32px 24px;
-      display: flex;
-      flex-direction: column;
-      gap: 24px;
+      border-radius: 16px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+      width: 100%;
+      max-width: 420px;
+      overflow: hidden;
     }
-    .login-header {
+
+    /* Branded header band */
+    .login-brand {
+      background: var(--navy);
+      padding: 32px 32px 28px;
       text-align: center;
+      border-bottom: 3px solid #f57e20;
     }
-    .login-header h1 {
-      font-size: 22px;
+
+    .login-brand img {
+      height: 40px;
+      width: auto;
+      margin-bottom: 16px;
+    }
+
+    .login-brand h1 {
+      font-size: 20px;
       font-weight: 700;
-      color: var(--dark);
+      color: var(--white);
+      margin: 0;
+      letter-spacing: -0.01em;
     }
-    .login-header p {
-      font-size: 14px;
-      color: var(--gray-500);
+
+    .login-brand p {
+      font-size: 13px;
+      color: rgba(255,255,255,0.5);
       margin-top: 4px;
     }
+
+    /* Form area */
+    .login-body {
+      padding: 32px;
+    }
+
     .login-form {
       display: flex;
       flex-direction: column;
-      gap: 14px;
+      gap: 20px;
     }
 
-    /* Setup form */
-    #setupSection { display: none; }
-    #setupSection.visible { display: block; }
-    #loginSection { display: none; }
-    #loginSection.visible { display: block; }
-    .setup-note {
-      background: var(--primary-light);
-      border: 1px solid rgba(24, 99, 220, 0.2);
-      border-radius: var(--radius);
-      padding: 12px;
+    .login-form .form-group {
+      gap: 6px;
+    }
+
+    .login-form .form-group label {
       font-size: 13px;
-      color: var(--primary-dark);
+      font-weight: 600;
+      color: var(--gray-700);
+    }
+
+    .login-form .form-group input {
+      padding: 12px 14px;
+    }
+
+    .login-form .btn-primary {
+      margin-top: 4px;
+      padding: 14px 24px;
+      font-size: 15px;
+      font-weight: 600;
+    }
+
+    .login-footer-text {
+      text-align: center;
+      margin-top: 16px;
+      padding-top: 16px;
+      border-top: 1px solid var(--gray-100);
+      font-size: 13px;
+      color: var(--gray-500);
+    }
+
+    .login-footer-text a {
+      color: var(--primary);
+      text-decoration: none;
+      font-weight: 500;
+    }
+
+    .login-footer-text a:hover {
+      text-decoration: underline;
+    }
+
+    /* Page footer */
+    .login-page-footer {
+      text-align: center;
+      margin-top: 24px;
+      font-size: 12px;
+      color: rgba(255,255,255,0.25);
+    }
+
+    @media (max-width: 480px) {
+      .login-page { padding: 16px; }
+      .login-brand { padding: 24px 24px 20px; }
+      .login-body { padding: 24px; }
     }
   </style>
 </head>
 <body>
-  <div class="login-wrapper">
-    <div class="login-card">
-      <div class="login-header">
-        <h1>Treasure Hunt</h1>
-        <p>Admin Dashboard</p>
+  <div class="login-page">
+    <div>
+      <div class="login-card">
+        <!-- Branded header -->
+        <div class="login-brand">
+          <img src="assets/logo.svg" alt="Transportme">
+          <h1>Treasure Hunt</h1>
+          <p>Administration Portal</p>
+        </div>
+
+        <div class="login-body">
+          <form id="loginForm" class="login-form" onsubmit="return false;">
+            <div class="form-group">
+              <label for="email">Email Address</label>
+              <input type="email" id="email" placeholder="you@company.com" autocomplete="email" required>
+            </div>
+            <div class="form-group">
+              <label for="password">Password</label>
+              <input type="password" id="password" placeholder="Enter password" autocomplete="current-password" required>
+            </div>
+            <button type="submit" id="loginBtn" class="btn btn-primary btn-block">Sign In</button>
+          </form>
+        </div>
       </div>
 
-      <!-- Login -->
-      <div id="loginSection" class="login-form">
-        <div class="form-group">
-          <label for="email">Email</label>
-          <input type="email" id="email" placeholder="admin@example.com" autocomplete="email">
-        </div>
-        <div class="form-group">
-          <label for="password">Password</label>
-          <input type="password" id="password" placeholder="Password" autocomplete="current-password">
-        </div>
-        <button id="loginBtn" class="btn btn-primary btn-block btn-lg">Sign In</button>
-      </div>
-
-      <!-- First-time setup -->
-      <div id="setupSection">
-        <div class="setup-note">
-          No admin account found. Create your first admin account to get started.
-        </div>
-        <div class="login-form" style="margin-top: 16px;">
-          <div class="form-group">
-            <label for="setupName">Name</label>
-            <input type="text" id="setupName" placeholder="Your name">
-          </div>
-          <div class="form-group">
-            <label for="setupEmail">Email</label>
-            <input type="email" id="setupEmail" placeholder="admin@example.com">
-          </div>
-          <div class="form-group">
-            <label for="setupPassword">Password</label>
-            <input type="password" id="setupPassword" placeholder="Choose a password">
-          </div>
-          <button id="setupBtn" class="btn btn-primary btn-block btn-lg">Create Account</button>
-        </div>
+      <div class="login-page-footer">
+        Powered by Transportme
       </div>
     </div>
   </div>
@@ -112,18 +164,9 @@
       window.location.href = '/admin.html';
     }
 
-    // Check if setup needed
-    (async () => {
-      try {
-        // Try to verify - if no users exist, the setup endpoint will accept
-        document.getElementById('loginSection').classList.add('visible');
-      } catch {
-        document.getElementById('loginSection').classList.add('visible');
-      }
-    })();
-
     // Login
-    document.getElementById('loginBtn').addEventListener('click', async () => {
+    document.getElementById('loginForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
       const email = document.getElementById('email').value.trim();
       const password = document.getElementById('password').value;
 
@@ -143,12 +186,7 @@
         });
 
         if (!res.ok) {
-          // If login fails and it might be first time, show setup
-          if (res.error && res.error.includes('Invalid')) {
-            showToast(res.error, true);
-          } else {
-            showToast(res.error || 'Login failed', true);
-          }
+          showToast(res.error || 'Login failed', true);
           btn.disabled = false;
           btn.textContent = 'Sign In';
           return;
@@ -157,72 +195,10 @@
         setToken(res.token);
         window.location.href = '/admin.html';
       } catch (err) {
-        showToast('Connection error. Is the API running?', true);
+        showToast('Connection error. Please try again.', true);
         btn.disabled = false;
         btn.textContent = 'Sign In';
       }
-    });
-
-    // Show setup form
-    document.getElementById('loginSection').querySelector('button').insertAdjacentHTML(
-      'afterend',
-      '<p style="text-align:center;margin-top:12px;font-size:13px;color:var(--gray-500)">' +
-      'First time? <a href="#" id="showSetup" style="color:var(--primary)">Create admin account</a></p>'
-    );
-
-    document.addEventListener('click', (e) => {
-      if (e.target.id === 'showSetup') {
-        e.preventDefault();
-        document.getElementById('loginSection').classList.remove('visible');
-        document.getElementById('setupSection').classList.add('visible');
-      }
-    });
-
-    // Setup
-    document.getElementById('setupBtn').addEventListener('click', async () => {
-      const name = document.getElementById('setupName').value.trim();
-      const email = document.getElementById('setupEmail').value.trim();
-      const password = document.getElementById('setupPassword').value;
-
-      if (!name || !email || !password) {
-        showToast('All fields are required', true);
-        return;
-      }
-
-      const btn = document.getElementById('setupBtn');
-      btn.disabled = true;
-      btn.textContent = 'Creating...';
-
-      try {
-        const res = await apiRequest('/api/auth/setup', {
-          method: 'POST',
-          body: JSON.stringify({ name, email, password })
-        });
-
-        if (!res.ok) {
-          showToast(res.error || 'Setup failed', true);
-          btn.disabled = false;
-          btn.textContent = 'Create Account';
-          return;
-        }
-
-        setToken(res.token);
-        window.location.href = '/admin.html';
-      } catch (err) {
-        showToast('Connection error', true);
-        btn.disabled = false;
-        btn.textContent = 'Create Account';
-      }
-    });
-
-    // Enter key support
-    document.querySelectorAll('input').forEach(input => {
-      input.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter') {
-          const section = input.closest('#loginSection, #setupSection');
-          if (section) section.querySelector('button').click();
-        }
-      });
     });
 
     function showToast(message, isError = false) {

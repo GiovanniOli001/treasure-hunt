@@ -2,7 +2,7 @@
 // AUTH ROUTES
 // ============================================
 
-import { Env, json, error, parseBody, createToken, verifyToken, hashPassword, verifyPassword, uuid } from '../index';
+import { Env, json, error, parseBody, createToken, verifyToken, requireAuth, hashPassword, verifyPassword, uuid } from '../index';
 
 interface LoginBody {
   email: string;
@@ -64,18 +64,38 @@ export async function handleAuth(
     return json({ valid: true });
   }
 
-  // POST /api/auth/setup - Create initial admin user (only if no users exist)
-  if (path === '/api/auth/setup' && method === 'POST') {
-    const count = await env.DB.prepare('SELECT COUNT(*) as count FROM users').first<{ count: number }>();
+  // GET /api/auth/users - List admin users (admin only)
+  if (path === '/api/auth/users' && method === 'GET') {
+    const auth = requireAuth(request, env);
+    if (auth instanceof Response) return auth;
 
-    if (count && count.count > 0) {
-      return error('Setup already complete. Admin user exists.', 403);
-    }
+    const { results } = await env.DB.prepare(
+      'SELECT id, email, name, created_at FROM users ORDER BY created_at'
+    ).all();
+
+    return json(results);
+  }
+
+  // POST /api/auth/users - Create a new admin user (admin only)
+  if (path === '/api/auth/users' && method === 'POST') {
+    const auth = requireAuth(request, env);
+    if (auth instanceof Response) return auth;
 
     const body = await parseBody<{ email: string; password: string; name: string }>(request);
 
     if (!body.email || !body.password || !body.name) {
       return error('Email, password, and name are required');
+    }
+
+    if (body.password.length < 6) {
+      return error('Password must be at least 6 characters');
+    }
+
+    // Check for duplicate email
+    const existing = await env.DB.prepare('SELECT id FROM users WHERE email = ?')
+      .bind(body.email.toLowerCase().trim()).first();
+    if (existing) {
+      return error('A user with this email already exists');
     }
 
     const id = uuid();
@@ -85,12 +105,31 @@ export async function handleAuth(
       INSERT INTO users (id, email, password_hash, name) VALUES (?, ?, ?, ?)
     `).bind(id, body.email.toLowerCase().trim(), passwordHash, body.name.trim()).run();
 
-    const token = createToken(
-      { userId: id, email: body.email, name: body.name },
-      env.JWT_SECRET || 'default-secret'
-    );
+    return json({ id, email: body.email.toLowerCase().trim(), name: body.name.trim() }, 201);
+  }
 
-    return json({ token, user: { id, email: body.email, name: body.name } });
+  // DELETE /api/auth/users/:id - Delete an admin user (admin only)
+  const deleteMatch = path.match(/^\/api\/auth\/users\/([a-f0-9-]+)$/i);
+  if (deleteMatch && method === 'DELETE') {
+    const auth = requireAuth(request, env);
+    if (auth instanceof Response) return auth;
+
+    const id = deleteMatch[1];
+
+    // Prevent deleting yourself
+    const payload = auth as { userId: string };
+    if (payload.userId === id) {
+      return error('Cannot delete your own account');
+    }
+
+    // Check user count - don't allow deleting the last admin
+    const count = await env.DB.prepare('SELECT COUNT(*) as count FROM users').first<{ count: number }>();
+    if (count && count.count <= 1) {
+      return error('Cannot delete the only admin user');
+    }
+
+    await env.DB.prepare('DELETE FROM users WHERE id = ?').bind(id).run();
+    return json({ message: 'User deleted' });
   }
 
   return error('Not found', 404);

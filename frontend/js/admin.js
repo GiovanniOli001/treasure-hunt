@@ -65,6 +65,12 @@ function setupEventListeners() {
   document.getElementById('deleteGameBtn').addEventListener('click', deleteGame);
   document.getElementById('saveGameBtn').addEventListener('click', saveGame);
   document.getElementById('addFieldBtn').addEventListener('click', addFormField);
+
+  // Users
+  document.getElementById('usersBtn').addEventListener('click', showUsersView);
+  document.getElementById('backToGames').addEventListener('click', showListView);
+  document.getElementById('newUserBtn').addEventListener('click', () => openModal('userModal'));
+  document.getElementById('saveUserBtn').addEventListener('click', saveUser);
 }
 
 // ============================================
@@ -667,4 +673,95 @@ function showToast(message, isError = false) {
     toast.classList.add('visible');
     setTimeout(() => toast.classList.remove('visible'), 3000);
   });
+}
+
+// ============================================
+// USER MANAGEMENT
+// ============================================
+
+async function showUsersView() {
+  showView('usersView');
+  await loadUsers();
+}
+
+async function loadUsers() {
+  const res = await apiRequest('/api/auth/users');
+  const users = Array.isArray(res) ? res : [];
+  const container = document.getElementById('usersList');
+
+  if (users.length === 0) {
+    container.innerHTML = '<div class="no-games"><p>No users found</p></div>';
+    return;
+  }
+
+  container.innerHTML = users.map(u => {
+    const created = u.created_at ? new Date(u.created_at + 'Z').toLocaleDateString() : '';
+    return '<div class="game-card" style="cursor:default">' +
+      '<div class="game-card-info">' +
+        '<h3>' + escapeHtml(u.name) + '</h3>' +
+        '<span class="game-code">' + escapeHtml(u.email) + '</span>' +
+      '</div>' +
+      '<div class="game-card-meta" style="flex-direction:row;gap:8px;align-items:center">' +
+        '<span class="entry-count">' + created + '</span>' +
+        '<button class="btn btn-danger btn-sm" onclick="deleteUser(\'' + u.id + '\', \'' + escapeHtml(u.name) + '\')">Remove</button>' +
+      '</div>' +
+    '</div>';
+  }).join('');
+}
+
+async function saveUser() {
+  const name = document.getElementById('userName').value.trim();
+  const email = document.getElementById('userEmail').value.trim();
+  const password = document.getElementById('userPassword').value;
+
+  if (!name || !email || !password) {
+    showToast('All fields are required', true);
+    return;
+  }
+
+  if (password.length < 6) {
+    showToast('Password must be at least 6 characters', true);
+    return;
+  }
+
+  const btn = document.getElementById('saveUserBtn');
+  btn.disabled = true;
+
+  try {
+    const res = await apiRequest('/api/auth/users', {
+      method: 'POST',
+      body: JSON.stringify({ name, email, password })
+    });
+
+    if (res.ok !== false && !res.error) {
+      closeModal('userModal');
+      document.getElementById('userName').value = '';
+      document.getElementById('userEmail').value = '';
+      document.getElementById('userPassword').value = '';
+      showToast('User created');
+      await loadUsers();
+    } else {
+      showToast(res.error || 'Failed to create user', true);
+    }
+  } catch {
+    showToast('Failed to create user', true);
+  }
+
+  btn.disabled = false;
+}
+
+async function deleteUser(id, name) {
+  showConfirm(
+    'Delete User',
+    'Are you sure you want to remove "' + name + '" as an admin?',
+    async () => {
+      const res = await apiRequest('/api/auth/users/' + id, { method: 'DELETE' });
+      if (res.ok !== false && !res.error) {
+        showToast('User removed');
+        await loadUsers();
+      } else {
+        showToast(res.error || 'Failed to remove user', true);
+      }
+    }
+  );
 }

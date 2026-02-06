@@ -18,6 +18,24 @@ export async function handleGames(
 ): Promise<Response> {
   const method = request.method;
 
+  // GET /api/games/active (public - list active games for landing page)
+  if (path === '/api/games/active' && method === 'GET') {
+    const { results } = await env.DB.prepare(`
+      SELECT code, name, map_config,
+        (SELECT COUNT(*) FROM entries WHERE game_id = games.id) as entry_count
+      FROM games WHERE status = 'active' ORDER BY created_at DESC
+    `).all();
+
+    const games = results.map(g => ({
+      code: g.code,
+      name: g.name,
+      entry_count: g.entry_count,
+      map_config: JSON.parse(g.map_config as string || '{}')
+    }));
+
+    return json(games);
+  }
+
   // GET /api/games/:code (public - by code for play page)
   // Matches short codes like "brisbane-2026", not UUIDs
   const codeMatch = path.match(/^\/api\/games\/([a-z0-9-]+)$/i);

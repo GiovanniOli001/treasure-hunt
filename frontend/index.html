@@ -2,11 +2,258 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Treasure Hunt</title>
-  <meta http-equiv="refresh" content="0;url=/admin.html">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Treasure Hunt - Transportme</title>
+  <link rel="stylesheet" href="css/main.css">
+  <style>
+    body { background: var(--navy); }
+
+    .page-wrapper {
+      background: linear-gradient(180deg, var(--navy) 0%, #0f2847 100%);
+      color: var(--white);
+    }
+
+    .page-header {
+      background: transparent;
+      padding: 28px 20px 12px;
+      justify-content: center;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+    }
+
+    .page-header img {
+      height: 36px;
+      width: auto;
+      margin-bottom: 10px;
+    }
+
+    .page-header h1 {
+      font-size: 30px;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      background: linear-gradient(135deg, #3aa9e0 0%, #f57e20 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .page-header .subtitle {
+      font-size: 15px;
+      opacity: 0.6;
+      margin-top: 4px;
+    }
+
+    /* Games section */
+    .games-section h2 {
+      font-size: 16px;
+      font-weight: 600;
+      color: rgba(255,255,255,0.5);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      margin-bottom: 14px;
+    }
+
+    .game-card {
+      background: rgba(255,255,255,0.06);
+      border: 1.5px solid rgba(255,255,255,0.1);
+      border-radius: 14px;
+      padding: 20px;
+      margin-bottom: 12px;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      text-decoration: none;
+      color: inherit;
+    }
+
+    .game-card:hover {
+      background: rgba(255,255,255,0.1);
+      border-color: rgba(245, 126, 32, 0.4);
+      transform: translateY(-2px);
+      box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+    }
+
+    .game-card:active {
+      transform: translateY(0);
+    }
+
+    .game-card-info h3 {
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--white);
+      margin-bottom: 4px;
+    }
+
+    .game-card-info .game-meta {
+      font-size: 13px;
+      color: rgba(255,255,255,0.4);
+    }
+
+    .game-card-arrow {
+      width: 36px;
+      height: 36px;
+      background: linear-gradient(135deg, #f57e20 0%, #e06b10 100%);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      transition: transform 0.2s;
+    }
+
+    .game-card:hover .game-card-arrow {
+      transform: translateX(3px);
+    }
+
+    .game-card-arrow svg {
+      width: 18px;
+      height: 18px;
+      color: var(--white);
+    }
+
+    .no-games {
+      text-align: center;
+      padding: 40px 20px;
+    }
+
+    .no-games-icon {
+      width: 64px;
+      height: 64px;
+      background: rgba(255,255,255,0.06);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 16px;
+    }
+
+    .no-games-icon svg {
+      width: 28px;
+      height: 28px;
+      color: rgba(255,255,255,0.3);
+    }
+
+    .no-games h3 {
+      font-size: 18px;
+      font-weight: 600;
+      color: var(--white);
+      margin-bottom: 6px;
+    }
+
+    .no-games p {
+      font-size: 14px;
+      color: rgba(255,255,255,0.4);
+    }
+
+    .page-footer {
+      border-top-color: rgba(255,255,255,0.1);
+      color: rgba(255,255,255,0.3);
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .games-section {
+      animation: fadeIn 0.4s ease;
+    }
+
+    @media (min-width: 601px) {
+      .page-wrapper {
+        background: linear-gradient(180deg, var(--navy) 0%, #0f2847 100%);
+      }
+    }
+  </style>
 </head>
 <body>
-  <p>Redirecting to <a href="/admin.html">admin dashboard</a>...</p>
+  <div class="page-wrapper">
+    <div class="page-header">
+      <img src="assets/logo.svg" alt="Transportme" onerror="this.style.display='none'">
+      <h1>TREASURE HUNT</h1>
+      <div class="subtitle">Drop your pin. Win the prize!</div>
+    </div>
+
+    <div id="loadingScreen" class="loading-screen">
+      <div class="spinner"></div>
+    </div>
+
+    <div id="gamesContent" class="page-content" style="display:none">
+      <div class="games-section">
+        <h2>Active Games</h2>
+        <div id="gamesList"></div>
+      </div>
+    </div>
+
+    <div class="page-footer">
+      Powered by Transportme
+    </div>
+  </div>
+
+  <script src="js/api.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', async () => {
+      const loadingScreen = document.getElementById('loadingScreen');
+      const gamesContent = document.getElementById('gamesContent');
+      const gamesList = document.getElementById('gamesList');
+
+      try {
+        const res = await apiRequest('/api/games/active');
+        const games = Array.isArray(res) ? res : [];
+
+        loadingScreen.style.display = 'none';
+        gamesContent.style.display = '';
+
+        if (games.length === 0) {
+          gamesList.innerHTML = `
+            <div class="no-games">
+              <div class="no-games-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <circle cx="12" cy="12" r="10"></circle>
+                  <path d="M8 15h8M9 9h.01M15 9h.01"></path>
+                </svg>
+              </div>
+              <h3>No Active Games</h3>
+              <p>Check back soon - a treasure hunt will be starting!</p>
+            </div>`;
+          return;
+        }
+
+        gamesList.innerHTML = games.map(g => {
+          const entryText = g.entry_count === 1 ? '1 player' : (g.entry_count || 0) + ' players';
+          return '<a class="game-card" href="play.html?code=' + encodeURIComponent(g.code) + '">' +
+            '<div class="game-card-info">' +
+              '<h3>' + escapeHtml(g.name) + '</h3>' +
+              '<span class="game-meta">' + entryText + ' entered</span>' +
+            '</div>' +
+            '<div class="game-card-arrow">' +
+              '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">' +
+                '<polyline points="9 18 15 12 9 6"></polyline>' +
+              '</svg>' +
+            '</div>' +
+          '</a>';
+        }).join('');
+
+      } catch (err) {
+        loadingScreen.style.display = 'none';
+        gamesContent.style.display = '';
+        gamesList.innerHTML = `
+          <div class="no-games">
+            <h3>Connection Error</h3>
+            <p>Could not load games. Please try again later.</p>
+          </div>`;
+      }
+    });
+
+    function escapeHtml(str) {
+      if (!str) return '';
+      const div = document.createElement('div');
+      div.textContent = str;
+      return div.innerHTML;
+    }
+  </script>
 </body>
 </html>

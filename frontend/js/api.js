@@ -34,7 +34,7 @@ async function apiRequest(path, options = {}) {
 
   if (response.status === 401) {
     clearToken();
-    if (window.location.pathname !== '/login.html' && window.location.pathname !== '/play.html') {
+    if (window.location.pathname !== '/login.html' && window.location.pathname !== '/play.html' && window.location.pathname !== '/' && window.location.pathname !== '/index.html') {
       window.location.href = '/login.html';
     }
   }
