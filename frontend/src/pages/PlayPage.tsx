@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef, useCallback } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useParams } from 'react-router-dom';
 import {
   Box,
@@ -14,7 +14,7 @@ import {
   Fade,
 } from '@mui/material';
 import CheckIcon from '@mui/icons-material/Check';
-import { MapContainer, TileLayer, Marker, useMapEvents, useMap } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, useMapEvents } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { apiRequest } from '../lib/api';
@@ -36,8 +36,6 @@ const PIN_ICON = new L.Icon({
   iconSize: [44, 56],
   iconAnchor: [22, 56],
 });
-
-const TREASURE_IMAGE = 'https://cdn.theorg.com/091ad477-ab91-4996-840d-fa11178dbd80_medium.jpg';
 
 interface GameData {
   id: string;
@@ -61,15 +59,7 @@ interface FormField {
   options?: string[];
 }
 
-interface RevealResults {
-  treasure_lat: number;
-  treasure_lng: number;
-  winner: { id: string; name: string; distance_m: number; marker_lat: number; marker_lng: number } | null;
-  total_entries: number;
-  my_entry: { id: string; distance_m: number; marker_lat: number; marker_lng: number; rank: number } | null;
-}
-
-type Screen = 'loading' | 'error' | 'form' | 'success' | 'countdown' | 'reveal';
+type Screen = 'loading' | 'error' | 'form' | 'success';
 
 // Map click handler component
 function MapClickHandler({ onMapClick }: { onMapClick: (lat: number, lng: number) => void }) {
@@ -78,17 +68,6 @@ function MapClickHandler({ onMapClick }: { onMapClick: (lat: number, lng: number
       onMapClick(e.latlng.lat, e.latlng.lng);
     },
   });
-  return null;
-}
-
-// Fit bounds for reveal map
-function FitBounds({ bounds }: { bounds: L.LatLngBoundsExpression | null }) {
-  const map = useMap();
-  useEffect(() => {
-    if (bounds) {
-      map.fitBounds(bounds, { padding: [40, 40], maxZoom: 16 });
-    }
-  }, [map, bounds]);
   return null;
 }
 
@@ -101,11 +80,7 @@ export default function PlayPage() {
   const [formValues, setFormValues] = useState<Record<string, string>>({});
   const [submitting, setSubmitting] = useState(false);
   const [toast, setToast] = useState<{ msg: string; severity: 'error' | 'success' } | null>(null);
-  const [countdownNum, setCountdownNum] = useState(3);
-  const [revealResults, setRevealResults] = useState<RevealResults | null>(null);
   const myEntryIdRef = useRef<string | null>(null);
-  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const gameDataRef = useRef<GameData | null>(null);
 
   // Load game
   useEffect(() => {
@@ -114,8 +89,6 @@ export default function PlayPage() {
       setScreen('error');
       return;
     }
-
-    const savedEntryId = localStorage.getItem('th_entry_' + code);
 
     (async () => {
       try {
@@ -128,20 +101,6 @@ export default function PlayPage() {
 
         const gd = res as unknown as GameData;
         setGameData(gd);
-        gameDataRef.current = gd;
-
-        if (gd.revealed_at) {
-          myEntryIdRef.current = savedEntryId;
-          await loadReveal(gd);
-          return;
-        }
-
-        if (savedEntryId) {
-          myEntryIdRef.current = savedEntryId;
-          setScreen('success');
-          startPolling();
-          return;
-        }
 
         if (gd.status !== 'active') {
           setErrorMsg(
@@ -160,60 +119,8 @@ export default function PlayPage() {
       }
     })();
 
-    return () => {
-      if (pollRef.current) clearInterval(pollRef.current);
-    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [code]);
-
-  const startPolling = useCallback(() => {
-    if (pollRef.current) return;
-    pollRef.current = setInterval(async () => {
-      try {
-        const res = await apiRequest<GameData>('/api/games/' + code);
-        if (res.ok && (res as unknown as GameData).revealed_at) {
-          clearInterval(pollRef.current!);
-          pollRef.current = null;
-          const gd = res as unknown as GameData;
-          setGameData(gd);
-          gameDataRef.current = gd;
-          runCountdown(gd);
-        }
-      } catch {
-        // retry silently
-      }
-    }, 3000);
-  }, [code]);
-
-  const runCountdown = (gd: GameData) => {
-    setScreen('countdown');
-    let count = 3;
-    setCountdownNum(count);
-    const timer = setInterval(() => {
-      count--;
-      if (count > 0) {
-        setCountdownNum(count);
-      } else {
-        clearInterval(timer);
-        setCountdownNum(0);
-        setTimeout(() => loadReveal(gd), 800);
-      }
-    }, 1000);
-  };
-
-  const loadReveal = async (gd: GameData) => {
-    const entryParam = myEntryIdRef.current ? '?entry_id=' + myEntryIdRef.current : '';
-    try {
-      const results = await apiRequest<RevealResults>(
-        '/api/games/' + gd.code + '/entries/results' + entryParam,
-      );
-      setRevealResults(results as unknown as RevealResults);
-    } catch {
-      // empty
-    }
-    setScreen('reveal');
-    setTimeout(() => launchConfetti(), 300);
-  };
 
   const handleMapClick = (lat: number, lng: number) => {
     setMarkerPos([lat, lng]);
@@ -250,7 +157,14 @@ export default function PlayPage() {
       localStorage.setItem('th_entry_' + gameData.code, myEntryIdRef.current!);
       setScreen('success');
       launchConfetti();
-      startPolling();
+
+      // Kiosk mode: show success briefly, then reset for next player
+      setTimeout(() => {
+        setScreen('form');
+        setMarkerPos(null);
+        setFormValues({});
+        setSubmitting(false);
+      }, 5000);
     } catch {
       setToast({ msg: 'Failed to submit. Please try again.', severity: 'error' });
       setSubmitting(false);
@@ -259,19 +173,6 @@ export default function PlayPage() {
 
   const mapCenter: [number, number] = gameData?.map_config?.center || [-27.4698, 153.0251];
   const mapZoom = gameData?.map_config?.zoom || 13;
-
-  // Compute reveal bounds
-  const revealBounds: L.LatLngBoundsExpression | null = (() => {
-    if (!revealResults) return null;
-    const pts: [number, number][] = [];
-    if (revealResults.treasure_lat && revealResults.treasure_lng)
-      pts.push([revealResults.treasure_lat, revealResults.treasure_lng]);
-    if (revealResults.winner)
-      pts.push([revealResults.winner.marker_lat, revealResults.winner.marker_lng]);
-    if (revealResults.my_entry)
-      pts.push([revealResults.my_entry.marker_lat, revealResults.my_entry.marker_lng]);
-    return pts.length >= 2 ? (pts as L.LatLngBoundsExpression) : null;
-  })();
 
   return (
     <Box
@@ -520,231 +421,16 @@ export default function PlayPage() {
             >
               You're In!
             </Typography>
-            <Typography sx={{ color: 'rgba(255,255,255,0.6)', fontSize: 16, maxWidth: 320 }}>
-              Your pin has been locked in. Stay on this page to watch the treasure reveal live!
+            <Typography sx={{ color: 'rgba(255,255,255,0.6)', fontSize: 16, maxWidth: 340 }}>
+              Your guess has been locked in!
             </Typography>
-            <Box sx={{ color: 'rgba(255,255,255,0.5)', fontSize: 14, display: 'flex', alignItems: 'center', gap: 0.5 }}>
-              Waiting for reveal
-              <Box sx={{ display: 'flex', gap: 0.5, ml: 0.5 }}>
-                {[0, 1, 2].map((i) => (
-                  <Box
-                    key={i}
-                    sx={{
-                      width: 6,
-                      height: 6,
-                      bgcolor: '#f57e20',
-                      borderRadius: '50%',
-                      animation: `dotPulse 1.4s ease-in-out ${i * 0.2}s infinite`,
-                    }}
-                  />
-                ))}
-              </Box>
-            </Box>
-          </Box>
-        )}
-
-        {/* COUNTDOWN */}
-        {screen === 'countdown' && (
-          <Box
-            sx={{
-              position: 'fixed',
-              inset: 0,
-              bgcolor: 'rgba(10, 22, 40, 0.95)',
-              zIndex: 8000,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              flexDirection: 'column',
-              gap: 2,
-            }}
-          >
-            <Typography
-              sx={{
-                fontSize: 18,
-                color: 'rgba(255,255,255,0.6)',
-                fontWeight: 600,
-                letterSpacing: '0.1em',
-                textTransform: 'uppercase',
-              }}
-            >
-              Revealing treasure in
+            <Typography sx={{ color: 'rgba(255,255,255,0.5)', fontSize: 15, maxWidth: 340 }}>
+              We'll contact you via email and text message if you win.
             </Typography>
-            <Typography
-              key={countdownNum}
-              sx={{
-                fontSize: 120,
-                fontWeight: 900,
-                lineHeight: 1,
-                background: 'linear-gradient(135deg, #3aa9e0 0%, #f57e20 100%)',
-                WebkitBackgroundClip: 'text',
-                WebkitTextFillColor: 'transparent',
-                animation: 'countPop 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
-              }}
-            >
-              {countdownNum > 0 ? countdownNum : '!'}
+            <Typography sx={{ color: 'rgba(255,255,255,0.35)', fontSize: 13, mt: 1 }}>
+              Good luck!
             </Typography>
           </Box>
-        )}
-
-        {/* REVEAL */}
-        {screen === 'reveal' && revealResults && (
-          <Fade in>
-            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5, flex: 1 }}>
-              {/* Winner card */}
-              {revealResults.winner && (
-                <Box
-                  sx={{
-                    background:
-                      'linear-gradient(135deg, rgba(245, 126, 32, 0.15) 0%, rgba(58, 169, 224, 0.1) 100%)',
-                    border: '2px solid rgba(245, 126, 32, 0.3)',
-                    borderRadius: '16px',
-                    p: 3,
-                    textAlign: 'center',
-                  }}
-                >
-                  <Typography
-                    sx={{
-                      fontSize: 14,
-                      color: 'rgba(255,255,255,0.5)',
-                      textTransform: 'uppercase',
-                      letterSpacing: '0.1em',
-                      mb: 1,
-                    }}
-                  >
-                    The Winner Is
-                  </Typography>
-                  <Typography
-                    sx={{
-                      fontSize: 24,
-                      fontWeight: 800,
-                      background: 'linear-gradient(135deg, #f57e20 0%, #3aa9e0 100%)',
-                      WebkitBackgroundClip: 'text',
-                      WebkitTextFillColor: 'transparent',
-                    }}
-                  >
-                    {revealResults.winner.name}
-                  </Typography>
-                  <Typography sx={{ color: 'rgba(255,255,255,0.6)', fontSize: 15, mt: 0.5 }}>
-                    {revealResults.winner.distance_m?.toFixed(1)}m from the treasure (out of{' '}
-                    {revealResults.total_entries} entries)
-                  </Typography>
-                </Box>
-              )}
-
-              {/* Reveal map */}
-              <Box
-                sx={{
-                  height: 350,
-                  borderRadius: 2,
-                  overflow: 'hidden',
-                  border: '2px solid rgba(245, 126, 32, 0.4)',
-                }}
-              >
-                <MapContainer
-                  center={
-                    revealResults.treasure_lat
-                      ? [revealResults.treasure_lat, revealResults.treasure_lng]
-                      : mapCenter
-                  }
-                  zoom={mapZoom}
-                  style={{ width: '100%', height: '100%' }}
-                  zoomControl={false}
-                  attributionControl={false}
-                >
-                  <TileLayer url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png" />
-                  {revealBounds && <FitBounds bounds={revealBounds} />}
-
-                  {/* Treasure marker */}
-                  {revealResults.treasure_lat && revealResults.treasure_lng && (
-                    <Marker
-                      position={[revealResults.treasure_lat, revealResults.treasure_lng]}
-                      icon={L.divIcon({
-                        className: '',
-                        html: `<div style="width:52px;height:52px;border-radius:50%;border:4px solid #f57e20;overflow:hidden;box-shadow:0 4px 16px rgba(245,126,32,0.5)"><img src="${TREASURE_IMAGE}" style="width:100%;height:100%;object-fit:cover" alt="Treasure"></div>`,
-                        iconSize: [52, 52],
-                        iconAnchor: [26, 26],
-                      })}
-                    />
-                  )}
-
-                  {/* Winner marker */}
-                  {revealResults.winner && (
-                    <Marker
-                      position={[revealResults.winner.marker_lat, revealResults.winner.marker_lng]}
-                      icon={L.divIcon({
-                        className: '',
-                        html: '<div style="width:28px;height:28px;background:#16a34a;border:3px solid #fff;border-radius:50%;box-shadow:0 2px 8px rgba(0,0,0,0.3);display:flex;align-items:center;justify-content:center"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg></div>',
-                        iconSize: [28, 28],
-                        iconAnchor: [14, 14],
-                      })}
-                    />
-                  )}
-
-                  {/* My entry marker */}
-                  {revealResults.my_entry &&
-                    (!revealResults.winner ||
-                      revealResults.my_entry.id !== revealResults.winner.id) && (
-                      <Marker
-                        position={[
-                          revealResults.my_entry.marker_lat,
-                          revealResults.my_entry.marker_lng,
-                        ]}
-                        icon={PIN_ICON}
-                      />
-                    )}
-                </MapContainer>
-              </Box>
-
-              {/* My result */}
-              {revealResults.my_entry && (
-                <Box
-                  sx={{
-                    bgcolor:
-                      revealResults.my_entry.id === revealResults.winner?.id
-                        ? 'rgba(245, 126, 32, 0.1)'
-                        : 'rgba(255,255,255,0.06)',
-                    border: `1.5px solid ${
-                      revealResults.my_entry.id === revealResults.winner?.id
-                        ? '#f57e20'
-                        : 'rgba(255,255,255,0.1)'
-                    }`,
-                    borderRadius: '12px',
-                    p: 2,
-                    textAlign: 'center',
-                  }}
-                >
-                  <Typography
-                    sx={{
-                      fontSize: 13,
-                      color: 'rgba(255,255,255,0.5)',
-                      textTransform: 'uppercase',
-                      letterSpacing: '0.06em',
-                      mb: 0.5,
-                    }}
-                  >
-                    Your Result
-                  </Typography>
-                  <Typography
-                    sx={{
-                      fontSize: 28,
-                      fontWeight: 800,
-                      color:
-                        revealResults.my_entry.id === revealResults.winner?.id
-                          ? '#f57e20'
-                          : '#3aa9e0',
-                    }}
-                  >
-                    {revealResults.my_entry.id === revealResults.winner?.id
-                      ? 'YOU WON!'
-                      : `#${revealResults.my_entry.rank} of ${revealResults.total_entries}`}
-                  </Typography>
-                  <Typography sx={{ color: 'rgba(255,255,255,0.5)', fontSize: 14, mt: 0.5 }}>
-                    {revealResults.my_entry.distance_m?.toFixed(1)}m from the treasure
-                  </Typography>
-                </Box>
-              )}
-            </Box>
-          </Fade>
         )}
 
         {/* Footer */}
@@ -776,15 +462,6 @@ export default function PlayPage() {
         @keyframes successPop {
           0% { transform: scale(0); }
           100% { transform: scale(1); }
-        }
-        @keyframes dotPulse {
-          0%, 80%, 100% { opacity: 0.3; transform: scale(0.8); }
-          40% { opacity: 1; transform: scale(1.2); }
-        }
-        @keyframes countPop {
-          0% { transform: scale(0.3); opacity: 0; }
-          50% { transform: scale(1.1); opacity: 1; }
-          100% { transform: scale(1); opacity: 1; }
         }
       `}</style>
     </Box>
