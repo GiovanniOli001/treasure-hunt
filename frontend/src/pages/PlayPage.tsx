@@ -289,7 +289,7 @@ export default function PlayPage() {
             component="img"
             src="/assets/Transportme UPLIFT LOGO 2025_no tag.svg"
             alt="Transportme"
-            sx={{ height: 32, mb: 1 }}
+            sx={{ height: 56, mb: 1.5 }}
           />
           <Typography
             variant="h5"

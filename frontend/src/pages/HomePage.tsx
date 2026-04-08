@@ -52,7 +52,7 @@ export default function HomePage() {
             component="img"
             src="/assets/Transportme UPLIFT LOGO 2025_no tag.svg"
             alt="Transportme"
-            sx={{ height: 36, mb: 1 }}
+            sx={{ height: 64, mb: 1.5 }}
           />
           <Typography
             variant="h4"

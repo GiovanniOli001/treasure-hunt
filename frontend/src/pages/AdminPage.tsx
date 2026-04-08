@@ -422,7 +422,7 @@ export default function AdminPage() {
               component="img"
               src="/assets/Transportme UPLIFT LOGO 2025_no tag.svg"
               alt="Transportme"
-              sx={{ height: 28 }}
+              sx={{ height: 48 }}
             />
             <Typography variant="h6" sx={{ fontWeight: 600, fontSize: 18 }}>
               Treasure Hunt Admin

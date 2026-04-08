@@ -88,7 +88,7 @@ export default function LoginPage() {
               component="img"
               src="/assets/Transportme UPLIFT LOGO 2025_no tag.svg"
               alt="Transportme"
-              sx={{ height: 40, mb: 2 }}
+              sx={{ height: 64, mb: 2 }}
             />
             <Typography variant="h6" sx={{ color: '#fff', fontWeight: 700 }}>
               Treasure Hunt
